@@ -10,11 +10,10 @@ from ESOLA import ESOLA
 # Parameters
 min_voice_frequency = 60
 wave_path = 'wavs/SpeechTest3.wav'
-frame_length_multiplier = 3  # Must be greater than 1 (value of about 3 is proposed in the paper)
-prefered_number_of_overlapping_frames = 2  # It's called 'prefered', because algorithm may raise this value to prevent crash
+number_of_epochs_in_frame = 2  # Must be greater than 1 (value of about 3 is proposed in the paper)
 
-time_change_factor = 0.8
-pitch_shift_factor = 1.1
+time_change_factor = 2.0
+pitch_shift_factor = 1.0
 
 # Cut wave
 wave, sample_frequency = soundfile.read(wave_path)
@@ -23,8 +22,7 @@ wave, sample_frequency = soundfile.read(wave_path)
 modified_wave = ESOLA(
     wave, time_change_factor,
     pitch_shift_factor,
-    frame_length_multiplier,
-    prefered_number_of_overlapping_frames,
+    number_of_epochs_in_frame,
     min_voice_frequency,
     sample_frequency
 )
