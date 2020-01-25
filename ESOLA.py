@@ -24,9 +24,9 @@ def extract_epoch_indices(wave, min_voice_frequency, sample_frequency):
     for i in range(1, len(wave)):
         x[i] = wave[i] - wave[i-1]
     x /= np.max(np.abs(x))
-    # Print
-    plt.figure(figsize=(30, 3))
-    plt.plot(x)
+    # # Print
+    # plt.figure(figsize=(30, 3))
+    # plt.plot(x)
 
     # First go through zero-frequency resonator
     print('First go through zero-frequency resonator...')
@@ -36,9 +36,9 @@ def extract_epoch_indices(wave, min_voice_frequency, sample_frequency):
     for i in range(2, len(x)):
         y1[i] = x[i] + 2*y1[i-1] - y1[i-2]
     y1 /= np.max(np.abs(y1))
-    # Print
-    plt.figure(figsize=(30, 3))
-    plt.plot(y1)
+    # # Print
+    # plt.figure(figsize=(30, 3))
+    # plt.plot(y1)
 
     # Second go through zero-frequency resonator
     print('Second go through zero-frequency resonator...')
@@ -48,9 +48,9 @@ def extract_epoch_indices(wave, min_voice_frequency, sample_frequency):
     for i in range(2, len(y1)):
         y2[i] = y1[i] + 2*y2[i-1] - y2[i-2]
     y2 /= np.max(np.abs(y2))
-    # Print
-    plt.figure(figsize=(30, 3))
-    plt.plot(y2)
+    # # Print
+    # plt.figure(figsize=(30, 3))
+    # plt.plot(y2)
 
     # Remove trend 1
     print('First go through trend remover...')
@@ -84,10 +84,10 @@ def extract_epoch_indices(wave, min_voice_frequency, sample_frequency):
     assert y[-1] == 0, str(y[-1])
     y /= np.max(np.abs(y))
 
-    # Plot
-    plt.figure(figsize=(30, 3))
-    plt.grid(axis='both')
-    plt.plot(y)
+    # # Plot
+    # plt.figure(figsize=(30, 3))
+    # plt.grid(axis='both')
+    # plt.plot(y)
 
     # Extract epoch indices
     print('Extracting epoch indices...')
@@ -119,23 +119,23 @@ def extract_epoch_indices(wave, min_voice_frequency, sample_frequency):
     #         else:
     #             break
 
-    # Print
-    fig = np.zeros(len(y))
-    for i in epoch_indices:
-        fig[int(i)] = 1
-    lin = np.arange(len(y))
-
-    plt.figure(figsize=(30, 6))
-    plt.grid(axis='both')
-    plt.ylim((-1, 1))
-    plt.plot(lin, y, 'r', lin, wave, 'g', lin, fig, 'b')
-
-    plt.show()
+    # # Print
+    # fig = np.zeros(len(y))
+    # for i in epoch_indices:
+    #     fig[int(i)] = 1
+    # lin = np.arange(len(y))
+    #
+    # plt.figure(figsize=(30, 6))
+    # plt.grid(axis='both')
+    # plt.ylim((-1, 1))
+    # plt.plot(lin, y, 'r', lin, wave, 'g', lin, fig, 'b')
+    #
+    # plt.show()
 
     return epoch_indices
 
 
-def time_stretch(wave, wav_epoch_indices, time_change_factor, number_of_epochs_in_frame, is_plotting_enabled=False):
+def time_stretch(wave, wav_epoch_indices, time_change_factor, number_of_epochs_in_frame, is_plotting_enabled=True):
     """Function for time-stretching using ESOLA algorithm
 
     ARGUMENTS:
@@ -169,6 +169,7 @@ def time_stretch(wave, wav_epoch_indices, time_change_factor, number_of_epochs_i
     last_epoch_index = 0
     synthesized_wav = np.zeros(0)
     window_wav = np.zeros(0)
+    synthesized_epoch_indices = list()
     for i in range(len(analysis_frame_indices) - number_of_epochs_in_frame):
         assert len(wav_frames[i]) == len(window_frames[i]), "ERROR: Wave and window frames have different length!"
         hop = analysis_frame_indices[i+1] - analysis_frame_indices[i]
@@ -184,6 +185,7 @@ def time_stretch(wave, wav_epoch_indices, time_change_factor, number_of_epochs_i
 
             # Update markers
             last_epoch_index += hop
+            synthesized_epoch_indices.append(last_epoch_index)
         target_length += int(hop * time_change_factor)
 
     # Normalize
@@ -192,20 +194,19 @@ def time_stretch(wave, wav_epoch_indices, time_change_factor, number_of_epochs_i
             window_wav[i] = 0.0001  # Avoiding potential dividing by 0
     synthesized_wav /= window_wav
 
-    # # Plot
-    # if is_plotting_enabled:
-    #     b = 1500
-    #     e = 2500
-    #
-    #     # Plot
-    #     fig = np.zeros(len(wave))
-    #     for i in wav_epoch_indices:
-    #         fig[int(i)] = 1
-    #     lin = np.arange(len(wave))
-    #
-    #     plt.figure(figsize=(30, 3))
-    #     plt.plot(lin[b:e], wave[b:e], 'b', lin[b:e], fig[b:e], 'r')
-    #     plt.show()
+    # Plot
+    if is_plotting_enabled:
+
+        # Plot
+        fig = np.zeros(len(synthesized_wav))
+        for i in synthesized_epoch_indices:
+            fig[int(i)] = 1
+        lin = np.arange(len(synthesized_wav))
+
+        plt.figure(figsize=(30, 3))
+        plt.plot(lin, synthesized_wav, 'b', lin, fig, 'r')
+        plt.grid()
+        plt.show()
 
     return synthesized_wav
 
@@ -228,6 +229,9 @@ def ESOLA(wave, time_change_factor, pitch_shift_factor, number_of_epochs_in_fram
 
     # Resample wave
     print('3) RESAMPLING WAVE...')
+    if pitch_shift_factor == 1.0:
+        return stretched_wave
+
     resampled_wave = scipy.signal.resample(stretched_wave,  int(len(stretched_wave) / pitch_shift_factor))
 
     return resampled_wave
